@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitness-Rang</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8ebee;--panel:#f7f8f9;--ink:#1c2531;--mute:#5d6875;--line:#c9cfd6;--btn:#1c2531;--btnt:#f7f8f9;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171c23;--panel:#212832;--ink:#eef1f4;--mute:#9aa5b1;--line:#364050;--btn:#eef1f4;--btnt:#171c23;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171c23;--panel:#212832;--ink:#eef1f4;--mute:#9aa5b1;--line:#364050;--btn:#eef1f4;--btnt:#171c23;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.45 Barlow,system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1,h2,.big{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.01em;margin:0}
+h1{font-size:44px;line-height:1}
+h2{font-size:24px;margin:28px 0 10px}
+p.sub{color:var(--mute);margin:8px 0 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:14px;color:var(--mute);margin-bottom:3px}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px;min-height:44px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid #4aa3ff;outline-offset:1px}
+.ex{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
+.ex:first-of-type{border-top:0}
+.ex b{font-size:16px;align-self:center;grid-column:1/-1}
+.hint{font-size:13px;color:var(--mute)}
+.ex[hidden]{display:none}
+#exs{max-height:60vh;overflow-y:auto}
+#q{margin-bottom:6px}
+button{font:600 18px "Barlow Condensed",sans-serif;letter-spacing:.03em;width:100%;margin-top:16px;min-height:52px;border:0;border-radius:4px;background:var(--btn);color:var(--btnt);cursor:pointer}
+#out{display:none}
+.hero{text-align:center;padding:22px 14px;border-radius:6px;color:#fff;border:1px solid rgba(0,0,0,.15)}
+.hero .big{font-size:60px;line-height:1}
+.hero small{display:block;font-size:15px;opacity:.9;margin-top:4px}
+.ladder{display:grid;gap:6px;margin-top:12px}
+.step{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--mute)}
+.step i{width:14px;height:14px;border-radius:50%;flex:none}
+.step.on{border:2px solid var(--ink);color:var(--ink);font-weight:600}
+.step span:last-child{margin-left:auto;font-size:13px}
+.row{padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.rt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.chip{font:700 18px "Barlow Condensed",sans-serif;color:#fff;padding:1px 10px;border-radius:3px}
+.bar{height:10px;background:var(--bg);border:1px solid var(--line);border-radius:2px;margin:8px 0 4px;position:relative;overflow:hidden}
+.bar div{height:100%}
+.avg{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+.err{color:#c1272d;margin-top:10px;display:none}
+@media (prefers-reduced-motion:no-preference){.bar div{transition:width .5s}}
+</style>
+</head>
+<body>
+<main>
+<h1>Welcher Rang bist du?</h1>
+<p class="sub">Gib deine Daten und Bestleistungen ein. Wir vergleichen sie mit dem Durchschnitt für dein Alter und Geschlecht.</p>
+
+<h2>Über dich</h2>
+<div class="panel grid">
+ <div><label for="age">Alter</label><input id="age" type="number" inputmode="numeric" min="14" max="90" placeholder="z. B. 28"></div>
+ <div><label for="sex">Geschlecht</label><select id="sex"><option value="m">Männlich</option><option value="f">Weiblich</option></select></div>
+ <div><label for="h">Größe (cm)</label><input id="h" type="number" inputmode="numeric" min="120" max="230" placeholder="z. B. 178"></div>
+ <div><label for="bw">Körpergewicht (kg)</label><input id="bw" type="number" inputmode="decimal" min="30" max="250" placeholder="z. B. 80"></div>
+</div>
+
+<h2>Deine Übungen</h2>
+<label for="q">Übung suchen</label><input id="q" type="search" placeholder="z. B. Curls, Presse, Rudern" autocomplete="off">
+<p class="hint" id="cnt"></p>
+<div class="panel" id="exs"></div>
+<p class="hint" id="none" style="display:none">Keine Übung gefunden. Versuche einen anderen Suchbegriff.</p>
+<p class="hint">Trage nur Übungen ein, die du kennst. Leere Zeilen werden übersprungen.</p>
+<div class="err" id="err" role="alert"></div>
+<button id="go" type="button">Rang berechnen</button>
+
+<section id="out" aria-live="polite">
+ <h2>Dein Gesamtrang</h2>
+ <div class="hero" id="hero"></div>
+ <div class="ladder" id="ladder"></div>
+ <h2>Pro Übung</h2>
+ <div class="panel" id="rows"></div>
+ <p class="hint">Die Werte sind Schätzungen auf Basis üblicher Kraftstandards (geschätztes Maximalgewicht im Verhältnis zum Körpergewicht). Der schwarze Strich markiert den Durchschnitt. Das ist keine medizinische Beratung.</p>
+</section>
+</main>
+
+<script>
+const T=[["Bronze","#a8693a"],["Silber","#7f8a96"],["Gold","#b98a0b"],["Platin","#2f8f8f"],["Diamant","#2f7fd6"],["Champion","#8a4fd0"],["Titan","#d62f3a"]];
+// Grenzen als Verhältnis (geschätztes 1RM / Körpergewicht) für Männer, ab Bronze. Durchschnitt = Silber.
+const E=[
+{id:"bench",n:"Bankdrücken",t:[.5,.75,1,1.25,1.5,1.75,2],f:.55,load:(b,w)=>w,note:"Gewicht der Stange in kg"},
+{id:"squat",n:"Kniebeuge",t:[.6,1,1.4,1.75,2.1,2.5,2.9],f:.7,load:(b,w)=>w,note:"Gewicht der Stange in kg"},
+{id:"dead",n:"Kreuzheben",t:[.8,1.2,1.6,2,2.4,2.8,3.2],f:.75,load:(b,w)=>w,note:"Gewicht der Stange in kg"},
+{id:"ohp",n:"Schulterdrücken",t:[.35,.5,.7,.85,1,1.2,1.4],f:.55,load:(b,w)=>w,note:"Gewicht der Stange in kg"},
+{id:"pull",n:"Klimmzüge",t:[.9,1.1,1.35,1.6,1.85,2.1,2.4],f:.75,load:(b,w)=>b+w,note:"Zusatzgewicht in kg (0 = ohne)"},
+{id:"push",n:"Liegestütze",t:[.7,.85,1,1.2,1.4,1.7,2],f:.8,load:(b,w)=>.64*b+w,note:"Zusatzgewicht in kg (0 = ohne)"}
+];
+E.forEach(e=>{if(e.id==="pull"||e.id==="push")e.bw=1});
+const X=(id,n,t,f,bw)=>E.push({id,n,t,f,bw,load:bw?(b,w)=>b+w:(b,w)=>w});
+X("incline","Schrägbankdrücken (Langhantel)",[.4,.65,.9,1.1,1.35,1.55,1.8],.55);
+X("dbbench","Kurzhantel-Bankdrücken (pro Hantel)",[.2,.32,.45,.58,.7,.85,1],.55);
+X("chest","Brustpresse (Maschine)",[.5,.8,1.1,1.45,1.8,2.2,2.6],.6);
+X("fly","Butterfly / Fliegende (Maschine)",[.3,.5,.75,1,1.25,1.5,1.8],.6);
+X("dips","Dips",[.9,1.15,1.45,1.75,2.05,2.35,2.7],.7,1);
+X("mpress","Schulterpresse (Maschine)",[.3,.5,.75,1,1.25,1.5,1.8],.6);
+X("dbohp","Kurzhantel-Schulterdrücken (pro Hantel)",[.15,.22,.3,.38,.46,.55,.65],.55);
+X("lat","Latzug",[.5,.75,1,1.25,1.5,1.75,2],.65);
+X("row","Langhantelrudern vorgebeugt",[.4,.65,.9,1.15,1.4,1.65,1.9],.6);
+X("cable","Sitzendes Kabelrudern",[.5,.8,1.1,1.4,1.7,2,2.3],.65);
+X("face","Face Pulls",[.2,.35,.5,.65,.8,.95,1.1],.6);
+X("lateral","Seitheben (pro Hantel)",[.08,.12,.17,.22,.27,.32,.38],.55);
+X("curl","Bizeps-Curls (Langhantel)",[.2,.35,.5,.65,.8,.95,1.1],.55);
+X("preacher","Preacher Curls",[.2,.3,.45,.6,.75,.9,1.05],.55);
+X("hammer","Hammer-Curls (pro Hantel)",[.1,.15,.22,.3,.38,.46,.55],.55);
+X("pushdown","Trizepsdrücken (Kabel)",[.25,.45,.65,.85,1.05,1.25,1.5],.6);
+X("skull","Schädelbrecher (Stirndrücken)",[.2,.35,.5,.65,.8,.95,1.1],.55);
+X("legpress","Beinpresse",[1,1.7,2.4,3.1,3.8,4.5,5.2],.75);
+X("legext","Beinstrecker",[.4,.65,.9,1.15,1.4,1.65,1.9],.7);
+X("legcurl","Beinbeuger",[.3,.5,.7,.9,1.1,1.3,1.5],.7);
+X("front","Frontkniebeuge",[.5,.8,1.1,1.4,1.7,2,2.3],.7);
+X("rdl","Rumänisches Kreuzheben",[.6,1,1.4,1.8,2.2,2.6,3],.75);
+X("hip","Hip Thrust",[.6,1,1.5,2,2.5,3,3.5],.85);
+X("calf","Wadenheben (Maschine)",[.6,1,1.5,2,2.5,3,3.5],.75);
+X("closegrip","Enges Bankdrücken",[.4,.65,.9,1.1,1.3,1.5,1.7],.55);
+X("smith","Bankdrücken (Multipresse)",[.45,.7,.95,1.2,1.45,1.7,1.95],.55);
+X("cross","Kabelcrossover",[.2,.35,.5,.65,.8,.95,1.1],.6);
+X("inclinem","Schräge Brustpresse (Maschine)",[.45,.75,1,1.3,1.6,1.95,2.3],.6);
+X("arnold","Arnold Press (pro Hantel)",[.12,.2,.28,.36,.44,.52,.6],.55);
+X("pushpress","Push Press",[.4,.6,.8,1,1.2,1.4,1.6],.55);
+X("landmine","Landmine Press",[.25,.4,.55,.7,.85,1,1.2],.55);
+X("rearfly","Reverse Fly (pro Hantel)",[.06,.1,.14,.18,.22,.26,.3],.6);
+X("tbar","T-Bar-Rudern",[.4,.7,1,1.3,1.6,1.9,2.2],.6);
+X("dbrow","Einarmiges Kurzhantelrudern (pro Hantel)",[.2,.35,.5,.65,.8,.95,1.1],.65);
+X("pulldownst","Kabel-Pullover (Straßer Arm)",[.2,.35,.5,.65,.8,.95,1.1],.6);
+X("chin","Klimmzüge im Untergriff (Chin-ups)",[1,1.2,1.45,1.7,1.95,2.2,2.5],.75,1);
+X("hyper","Rückenstrecker (Hyperextension)",[1,1.3,1.6,1.9,2.2,2.5,2.8],.8,1);
+X("rack","Rack Pull",[1,1.5,2,2.5,3,3.5,4],.75);
+X("sumo","Sumo-Kreuzheben",[.8,1.2,1.6,2,2.4,2.8,3.2],.75);
+X("trap","Trap-Bar-Kreuzheben",[.9,1.3,1.75,2.2,2.6,3,3.4],.75);
+X("goodm","Good Mornings",[.3,.5,.75,1,1.25,1.5,1.8],.7);
+X("hack","Hackenschmidt-Kniebeuge (Maschine)",[.8,1.3,1.8,2.3,2.8,3.3,3.8],.75);
+X("goblet","Goblet Squat (eine Hantel)",[.2,.35,.5,.65,.8,.95,1.1],.7);
+X("split","Bulgarian Split Squat (pro Hantel)",[.15,.25,.35,.45,.55,.65,.75],.7);
+X("lunge","Ausfallschritte (pro Hantel)",[.15,.25,.35,.45,.55,.65,.75],.7);
+X("abd","Beinabduktor (Maschine)",[.5,.8,1.1,1.4,1.7,2,2.3],.8);
+X("add","Beinadduktor (Maschine)",[.5,.8,1.1,1.4,1.7,2,2.3],.8);
+X("shrugdb","Schulterzucken (pro Hantel)",[.3,.45,.6,.75,.9,1.05,1.2],.65);
+X("shrugbb","Schulterzucken (Langhantel)",[.6,1,1.4,1.8,2.2,2.6,3],.7);
+X("cablecurl","Kabelcurls",[.2,.35,.5,.65,.8,.95,1.1],.55);
+X("conc","Konzentrationscurls (pro Hantel)",[.1,.18,.26,.34,.42,.5,.58],.55);
+X("wrist","Handgelenkscurls",[.15,.25,.35,.45,.55,.65,.75],.6);
+X("ohtri","Trizeps über Kopf (Kabel)",[.2,.35,.5,.65,.8,.95,1.1],.6);
+X("abcable","Kabelcrunch",[.3,.5,.75,1,1.25,1.5,1.8],.7);
+X("legraise","Beinheben hängend",[1.1,1.3,1.5,1.75,2,2.3,2.6],.8,1);
+const $=id=>document.getElementById(id);
+$("exs").innerHTML=E.map(e=>`<div class="ex" data-n="${e.n.toLowerCase()}"><b>${e.n}</b>
+<div><label for="w_${e.id}">${e.bw?"Zusatz (kg)":"Gewicht (kg)"}</label><input id="w_${e.id}" type="number" inputmode="decimal" min="0" placeholder="${e.bw?"0":"kg"}"></div>
+<div><label for="r_${e.id}">Wiederholungen</label><input id="r_${e.id}" type="number" inputmode="numeric" min="1" max="50" placeholder="Wdh."></div><span></span></div>`).join("");
+
+function filt(){const q=$("q").value.trim().toLowerCase();let n=0;document.querySelectorAll("#exs .ex").forEach(r=>{const s=!q||r.dataset.n.includes(q);r.hidden=!s;if(s)n++});$("none").style.display=n?"none":"block";$("cnt").textContent=n+" von "+E.length+" Übungen"}
+$("q").addEventListener("input",filt);filt();
+function ageF(a){if(a<23)return .8+(a-14)*.0222;if(a<=40)return 1;return Math.max(.5,1-.01*(a-40))}
+// Stufe 0..7 (stetig): 0 = unter Bronze, 7 = Titan erreicht
+function level(r,t){if(r<t[0])return Math.max(0,r/t[0]*.999);for(let i=0;i<6;i++){if(r<t[i+1])return i+1+(r-t[i])/(t[i+1]-t[i])*.999}return 7}
+function err(m){const x=$("err");x.textContent=m;x.style.display=m?"block":"none"}
+
+$("go").onclick=()=>{
+ const age=+$("age").value,bw=+$("bw").value,h=+$("h").value,sex=$("sex").value;
+ if(!(age>=14&&age<=90)||!(bw>=30)||!(h>=120)){err("Bitte gib Alter (14–90), Größe und Körpergewicht an.");return}
+ const af=ageF(age),res=[];
+ E.forEach(e=>{
+  const w=$("w_"+e.id).value,r=+$("r_"+e.id).value;
+  if(!r||r<1)return;
+  const add=+w||0,load=e.load(bw,add);
+  if(!(load>0))return;
+  const rm=load*(1+Math.min(r,30)/30); // Epley
+  const ratio=rm/bw,k=(sex==="f"?e.f:1)*af,t=e.t.map(x=>x*k);
+  const lv=level(ratio,t),avg=t[1];
+  res.push({e,rm,lv,pct:Math.round(ratio/avg*100),avgKg:avg*bw,t});
+ });
+ if(!res.length){err("Trage mindestens eine Übung mit Wiederholungen ein.");return}
+ err("");
+ const mean=res.reduce((s,x)=>s+x.lv,0)/res.length;
+ const idx=Math.min(6,Math.max(0,Math.floor(mean)-1+ (mean>=1?1:0)));
+ const tier=mean<1?null:T[Math.min(6,Math.floor(mean)-1)];
+ const hero=$("hero");
+ hero.style.background=tier?tier[1]:"#5d6875";
+ hero.innerHTML=`<div class="big">${tier?tier[0]:"Einsteiger"}</div><small>${tier?"Rang "+(T.indexOf(tier)+1)+" von 7":"Noch unter Bronze – fang an!"} · Durchschnitt über ${res.length} ${res.length>1?"Übungen":"Übung"}</small>`;
+ const cur=tier?T.indexOf(tier):-1;
+ $("ladder").innerHTML=T.map((x,i)=>`<div class="step${i===cur?" on":""}"><i style="background:${x[1]}"></i><span>${x[0]}</span><span>${i===cur?"Du bist hier":i<cur?"geschafft":""}</span></div>`).join("");
+ $("rows").innerHTML=res.map(x=>{
+  const L=Math.floor(x.lv),tr=L>=1?T[Math.min(6,L-1)]:null;
+  const next=L<7?T[Math.max(0,L)]:null;
+  const nextKg=L<7?Math.ceil(x.t[Math.max(0,L)]*+$("bw").value):0;
+  const fill=Math.min(100,x.lv/7*100),avgPos=2/7*100;
+  const diff=x.pct>=100?`${x.pct-100} % über dem Durchschnitt`:`${100-x.pct} % unter dem Durchschnitt`;
+  return `<div class="row"><div class="rt"><strong>${x.e.n}</strong><span class="chip" style="background:${tr?tr[1]:"#5d6875"}">${tr?tr[0]:"Einsteiger"}</span></div>
+  <div class="bar"><div style="width:${fill}%;background:${tr?tr[1]:"#5d6875"}"></div><span class="avg" style="left:${avgPos}%"></span></div>
+  <div class="hint">Geschätztes Maximum: ${Math.round(x.rm)} kg · ${diff}${next?` · Für ${next[0]}: ca. ${nextKg} kg Maximum`:" · Höchster Rang erreicht"}</div></div>`}).join("");
+ $("out").style.display="block";
+ $("out").scrollIntoView({behavior:"smooth"});
+};
+</script>
+</body>
+</html>
